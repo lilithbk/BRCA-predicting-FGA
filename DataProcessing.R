@@ -8,13 +8,13 @@ library(faraway)
 
 # First, need to get list of sample ID's that are present in the clinical data
 # (Due to inconsistencies within cBioPortal, all samples in clin data are in genomic data but opposite not true)
-clin <- read.delim("Data/brca_tcga_pan_can_atlas_2018_clinical_data.tsv")
+clin <- read.delim("../Data/brca_tcga_pan_can_atlas_2018_clinical_data.tsv")
 clin <- clin %>%
   mutate(sampleId = str_replace_all(sampleId, "-", ".")) # Format to match RNAseq data
 samp_ids <- pull(clin, sampleId)
 
 # Filter RNAseq data to contain only the samples in clin data and keep only one gene name column
-rna <- read.delim("Data/brca_tcga_pan_can_atlas_2018/data_mrna_seq_v2_rsem.txt")
+rna <- read.delim("../Data/brca_tcga_pan_can_atlas_2018/data_mrna_seq_v2_rsem.txt")
 rna <- rna %>%
   select(-Entrez_Gene_Id) %>% # Hugo symbol much easier to work with
   drop_na(Hugo_Symbol) %>%
@@ -69,4 +69,7 @@ clin.2 <- clin %>%
 clin.rna <- merge(clin.2, rna, by = "sampleId")
 clin.rna <- clin.rna %>%
   relocate(sampleId, FRACTION_GENOME_ALTERED)
+clin.rna <- clin.rna %>%
+  filter(GENETIC_ANCESTRY_LABEL != "") %>%
+  filter(SUBTYPE != "")
 write_tsv(clin.rna, "ProcessedData/rna_expression_with_clinical_vars_of_interest.tsv")
