@@ -21,3 +21,7 @@ reduced.lm <- step(full.lm, direction = "backward", k = log(nrow(df)))
 summary(reduced.lm)
 write_rds(reduced.lm, "LinearRegressions/reduced_model.rds")
 write_rds(summary(reduced.lm), "LinearRegressions/reduced_model_summary.rds")
+
+# F-test
+anova(reduced.lm, full.lm)
+write_rds(anova(reduced.lm, full.lm), "LinearRegressions/F_test.rds")
