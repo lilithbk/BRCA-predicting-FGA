@@ -1,0 +1,96 @@
+---
+title: "Data Analysis and Linear Models"
+author: "Bristol Johnson"
+date: "2026-04-08"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(tidyverse)
+library(faraway)
+```
+
+# Data Analysis
+
+With such an extensive data set, we initially had to pre-process much of our data with some initial variable selection. Using LASSO, we were able to reduce the number of variables from over 20,000 to 51 protein/mRNA expression variables, creating a more manageable pool of data for our analysis. The code for this process may be found in GitHub. We then added several clinical variables, both quantitative and categorical. These variables were age, cancer subtype, and genetic ancestry label. 
+
+### Visualizing Data
+
+```{r}
+#Loading data
+BRCA <- read.delim("rna_expression_with_clinical_vars_of_interest.tsv") 
+
+#Creating Histogram of FGA
+ggplot(data = BRCA, aes(x = FRACTION_GENOME_ALTERED)) + geom_histogram() + labs(title ="Histogram of Fraction of Genome Altered (FGA)")
+```
+
+From this graph, we observe that our dependent variable FGA is right skewed, with most observations concentrated from roughly 0.00 to 0.60. This reflects that most samples have low to moderate fractions of genome altered, while there are still a select few samples with a very high fraction of alteration.
+
+```{r}
+#Creating Histogram of Age
+ggplot(data = BRCA, aes(x = AGE)) + geom_histogram() + labs(title ="Histogram of Age")
+```
+
+From this graph, we observe that the clinical data of age looks roughly bell shaped, with a clear peak around 60 and a roughly symmetric distribution on either side of this peak. There is a large range of ages present here, but most individuals seem to fall between 45 and 75.
+
+```{r}
+# Bar Chart of Subtype
+ggplot(BRCA, aes(x = SUBTYPE)) + geom_bar() + labs(
+    title = "Distribution of Cancer Subtypes") 
+```
+
+From this, we see that the majority of data seems to be of the BRCA_LumA subtype, with a count over 200. The least common subtype is BRCA_Normal, with a count of less than 25.
+
+```{r}
+# Creating scatterplot of PAIP1 vs FGA
+ggplot(BRCA, aes(x = PAIP1, y = FRACTION_GENOME_ALTERED)) + geom_point() + labs(title = "PAIP1 vs FGA") 
+```
+
+This scatterplot explores the relationship between PAIP1 (a specific protein expression) and FGA. Through this, we can observe a roughly positive relationship between the two variables.
+
+### Analyzing Potential Collinearity
+
+Particularly looking at our quantitative rna/protein expression data, we want to analyze and check for any potential collinearity.
+
+```{r}
+# Loading rna/protein expression specific set
+rna <- read.delim("shrunk_lasso_reg_subset_rna_expression.tsv")
+
+# Creating Dataframe of correlation values
+rna.cor <- cor(rna[, -(1:2)])
+
+#Checking to see if any correlations exceed a magnitude of 0.8
+rna.cor[abs(rna.cor) > 0.8 & rna.cor < 1]
+```
+
+No correlations exceed a magnitude of 0.8.
+
+```{r}
+#Creating Dataframe of VIF values
+rna.vif <- vif(rna[, -(1:2)])
+
+# Checking what VIF values exceed 6
+rna.vif[rna.vif > 6]
+```
+
+No VIFs exceed 6, so no major collinearity problems are seen.
+
+```{r}
+# Checking what VIFs exceed 2
+rna.vif[rna.vif > 2]
+```
+
+Several exceed 2, though, so there are some collinearity problems, which is to be expected (and is unavoidable with this type of data)
+
+```{r}
+# Checking mean of VIFs
+mean(rna.vif)
+```
+
+The mean of VIFs does exceed 1, but is not concerningly large.
+
+Based off of this analysis, we acknowledge the presence of collinearity in our data, and that this is an unavoidable reality when working with this type of data. Given that there are no especially major collinearity issues identified, we will proceed with our model.
+
